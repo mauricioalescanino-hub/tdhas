@@ -215,6 +215,26 @@
       margin-top: 4px;
     }
 
+    .obs-input {
+      width: 100%;
+      margin-top: 9px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .obs-input:focus { border-color: var(--gold); border-left-color: var(--gold); }
+    .obs-input::placeholder { color: var(--text-muted); }
+    .obs-input.ok  { border-left-color: var(--spotify); }
+    .obs-input.wip { border-left-color: var(--gold); }
+
     .spotify-col {
       display: flex;
       align-items: center;
@@ -344,6 +364,30 @@
       color: var(--text-muted);
       font-size: 13px;
       padding: 1.5rem 0;
+    }
+
+    .sugg-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      background: var(--gold-glow);
+      border: 1px solid var(--gold-dim);
+      border-radius: 6px;
+      padding: 6px 11px;
+      display: none;
+      margin-bottom: 1rem;
+    }
+
+    .sugg-count::before {
+      content: '';
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--gold);
+      margin-right: 7px;
+      vertical-align: middle;
     }
 
     /* ACTIONS */
@@ -567,6 +611,7 @@
   <div class="string-divider"><div class="fret"></div></div>
 
   <div class="section-title">Sugestões da galera</div>
+  <div class="sugg-count" id="sugg-count"></div>
   <div class="sugg-list" id="sugg-list"></div>
 
   <div class="actions" style="justify-content:flex-start; border-top:none; padding-top:0;">
@@ -817,6 +862,25 @@
     else showToast('Cole o link do Spotify primeiro.');
   }
 
+  /* ---------- OBSERVAÇÕES ---------- */
+  function obsStatus(v) {
+    if (!v) return '';
+    if (/100%|pronta|prontas|ensaiada|fechada|ok\b/i.test(v) && !/falta|precisa|ajust|trabalh|melhor/i.test(v)) return 'ok';
+    return 'wip';
+  }
+
+  function updateObs(id, val) {
+    const s = songs.find(x => x.id === id);
+    if (!s) return;
+    s.observations = val;
+    const card = document.getElementById('card-' + id);
+    if (card) {
+      const inp = card.querySelector('.obs-input');
+      if (inp) inp.className = 'obs-input ' + obsStatus(val);
+    }
+    persistSong(id, { observations: val });
+  }
+
   /* ---------- RENDER ---------- */
   function renderSongs() {
     const list = document.getElementById('songs-list');
@@ -832,6 +896,10 @@
           '<div class="song-title">' + esc(s.title) + '</div>' +
           '<div class="song-artist">' + esc(s.artist) + '</div>' +
           '<div class="song-genre">' + esc(s.genre) + '</div>' +
+          '<input class="obs-input ' + obsStatus(s.observations) + '" type="text"' +
+            ' placeholder="Observações (ex: 100% ensaiada, falta vocal…)"' +
+            ' value="' + esc(s.observations) + '"' +
+            ' oninput="updateObs(' + s.id + ', this.value)" />' +
         '</div>' +
         '<div class="spotify-col">' +
           '<input class="spotify-input" type="text" placeholder="Link do Spotify…"' +
@@ -902,6 +970,16 @@
   function renderSuggestions() {
     const list = document.getElementById('sugg-list');
     list.innerHTML = '';
+
+    const countEl = document.getElementById('sugg-count');
+    const n = suggestions.length;
+    if (n > 0) {
+      countEl.textContent = n === 1 ? '1 sugestão aguardando avaliação' : n + ' sugestões aguardando avaliação';
+      countEl.style.display = 'inline-block';
+    } else {
+      countEl.style.display = 'none';
+    }
+
     if (!suggestions.length) {
       list.innerHTML = '<div class="empty-msg">Nenhuma sugestão ainda. Seja o primeiro! 🤘</div>';
       return;
