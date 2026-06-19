@@ -281,6 +281,71 @@
     .delete-btn:hover { border-color: var(--danger); color: var(--danger); }
     .delete-btn svg { width: 13px; height: 13px; }
 
+    /* SUGGESTIONS */
+    .sugg-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 1.5rem;
+    }
+
+    .sugg-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.1rem 1.25rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: center;
+      transition: border-color 0.15s;
+    }
+
+    .sugg-card:hover { border-color: var(--border-hi); }
+
+    .sugg-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 5px;
+      letter-spacing: 0.05em;
+    }
+
+    .sugg-note {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 6px;
+      font-style: italic;
+    }
+
+    .sugg-actions { display: flex; gap: 7px; align-items: center; }
+
+    .approve-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      padding: 0;
+    }
+
+    .approve-btn:hover { border-color: var(--spotify); color: var(--spotify); background: var(--spotify-bg); }
+    .approve-btn svg { width: 14px; height: 14px; }
+
+    .empty-msg {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      padding: 1.5rem 0;
+    }
+
     /* ACTIONS */
     .actions {
       display: flex;
@@ -500,6 +565,18 @@
   </div>
 
   <div class="string-divider"><div class="fret"></div></div>
+
+  <div class="section-title">Sugestões da galera</div>
+  <div class="sugg-list" id="sugg-list"></div>
+
+  <div class="actions" style="justify-content:flex-start; border-top:none; padding-top:0;">
+    <button class="btn btn-gold" onclick="openSuggModal()">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="10" y1="4" x2="10" y2="16"/><line x1="4" y1="10" x2="16" y2="10"/></svg>
+      Sugerir música
+    </button>
+  </div>
+
+  <div class="string-divider"><div class="fret"></div></div>
   <div class="footer">TDHAs · Feito com 🎸</div>
 </div>
 
@@ -525,6 +602,32 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="sugg-modal" onclick="closeSuggOutside(event)">
+  <div class="modal">
+    <div class="modal-title">Sugerir música</div>
+    <div class="modal-field">
+      <div class="field-label">Música</div>
+      <input type="text" class="field-input" id="sugg-title" placeholder="Nome da música" style="width:100%" />
+    </div>
+    <div class="modal-field">
+      <div class="field-label">Artista / Banda</div>
+      <input type="text" class="field-input" id="sugg-artist" placeholder="Nome da banda (opcional)" style="width:100%" />
+    </div>
+    <div class="modal-field">
+      <div class="field-label">Seu nome</div>
+      <input type="text" class="field-input" id="sugg-by" placeholder="Quem está sugerindo? (opcional)" style="width:100%" />
+    </div>
+    <div class="modal-field">
+      <div class="field-label">Comentário</div>
+      <input type="text" class="field-input" id="sugg-note" placeholder="Por que essa música? (opcional)" style="width:100%" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeSuggModal()">Cancelar</button>
+      <button class="btn btn-confirm" onclick="confirmSugg()">Enviar sugestão</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- Supabase client -->
@@ -546,6 +649,7 @@
 
   let songs = [];
   let rehearsal = { date: '', time: '', local: '' };
+  let suggestions = [];
 
   /* ---------- STATUS ---------- */
   function setStatus(mode) {
@@ -565,6 +669,8 @@
       songs = s || [];
       const { data: r } = await sb.from('rehearsal').select('data').eq('id', 1).maybeSingle();
       if (r && r.data) rehearsal = { date: r.data.date || '', time: r.data.time || '', local: r.data.local || '' };
+      const { data: sg } = await sb.from('suggestions').select('*').order('created_at', { ascending: false });
+      suggestions = sg || [];
       setStatus('online');
     } catch (e) {
       console.error(e);
@@ -580,11 +686,12 @@
       const data = JSON.parse(raw);
       songs = data.songs || seedSongs();
       if (data.rehearsal) rehearsal = data.rehearsal;
+      suggestions = data.suggestions || [];
     } catch (e) { songs = seedSongs(); }
   }
 
   function saveLocal() {
-    try { localStorage.setItem(LOCAL_KEY, JSON.stringify({ songs, rehearsal })); } catch (e) {}
+    try { localStorage.setItem(LOCAL_KEY, JSON.stringify({ songs, rehearsal, suggestions })); } catch (e) {}
   }
 
   function seedSongs() {
@@ -639,6 +746,13 @@
     if (!s) return '';
     const [y, m, d] = s.split('-');
     return d + '/' + m + '/' + y;
+  }
+
+  function fmtDateShort(iso) {
+    try {
+      const d = new Date(iso);
+      return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
+    } catch (e) { return ''; }
   }
 
   function esc(str) {
@@ -784,6 +898,101 @@
     showToast('Música removida.');
   }
 
+  /* ---------- SUGGESTIONS ---------- */
+  function renderSuggestions() {
+    const list = document.getElementById('sugg-list');
+    list.innerHTML = '';
+    if (!suggestions.length) {
+      list.innerHTML = '<div class="empty-msg">Nenhuma sugestão ainda. Seja o primeiro! 🤘</div>';
+      return;
+    }
+    suggestions.forEach(s => {
+      const card = document.createElement('div');
+      card.className = 'sugg-card';
+      const meta = [];
+      if (s.suggested_by) meta.push('por ' + esc(s.suggested_by));
+      if (s.created_at)   meta.push(fmtDateShort(s.created_at));
+      card.innerHTML =
+        '<div class="song-info">' +
+          '<div class="song-title">' + esc(s.title) + '</div>' +
+          (s.artist ? '<div class="song-artist">' + esc(s.artist) + '</div>' : '') +
+          (meta.length ? '<div class="sugg-meta">' + meta.join(' · ') + '</div>' : '') +
+          (s.note ? '<div class="sugg-note">&ldquo;' + esc(s.note) + '&rdquo;</div>' : '') +
+        '</div>' +
+        '<div class="sugg-actions">' +
+          '<button class="approve-btn" title="Aprovar e adicionar ao setlist" onclick="approveSugg(' + s.id + ')">' +
+            '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10l4 4 8-9" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+          '</button>' +
+          '<button class="delete-btn" title="Descartar sugestão" onclick="deleteSugg(' + s.id + ')">' +
+            '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="5" y1="5" x2="15" y2="15"/><line x1="15" y1="5" x2="5" y2="15"/></svg>' +
+          '</button>' +
+        '</div>';
+      list.appendChild(card);
+    });
+  }
+
+  function openSuggModal() {
+    ['sugg-title', 'sugg-artist', 'sugg-by', 'sugg-note'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('sugg-modal').classList.add('open');
+    setTimeout(() => document.getElementById('sugg-title').focus(), 50);
+  }
+  function closeSuggModal() { document.getElementById('sugg-modal').classList.remove('open'); }
+  function closeSuggOutside(e) { if (e.target === document.getElementById('sugg-modal')) closeSuggModal(); }
+
+  async function confirmSugg() {
+    const title  = document.getElementById('sugg-title').value.trim();
+    const artist = document.getElementById('sugg-artist').value.trim();
+    const by     = document.getElementById('sugg-by').value.trim();
+    const note   = document.getElementById('sugg-note').value.trim();
+    if (!title) { showToast('Diga ao menos o nome da música.'); return; }
+
+    const row = { title, artist, suggested_by: by, note };
+    if (configured) {
+      const { data, error } = await sb.from('suggestions').insert(row).select().single();
+      if (error) { showToast('Erro ao enviar sugestão.'); return; }
+      suggestions.unshift(data);
+    } else {
+      suggestions.unshift({ id: Date.now(), created_at: new Date().toISOString(), ...row });
+      saveLocal();
+    }
+    closeSuggModal();
+    renderSuggestions();
+    showToast('Sugestão enviada! Valeu 🤘');
+  }
+
+  async function approveSugg(id) {
+    const s = suggestions.find(x => x.id === id);
+    if (!s) return;
+    const position = songs.length ? Math.max(...songs.map(x => x.position || 0)) + 1 : 0;
+    const row = { title: s.title, artist: s.artist || '—', genre: '—', spotify: '', position };
+
+    if (configured) {
+      const { data, error } = await sb.from('songs').insert(row).select().single();
+      if (error) { showToast('Erro ao aprovar.'); return; }
+      songs.push(data);
+      await sb.from('suggestions').delete().eq('id', id);
+    } else {
+      songs.push({ id: Date.now(), ...row });
+    }
+    suggestions = suggestions.filter(x => x.id !== id);
+    if (!configured) saveLocal();
+    renderSongs();
+    renderSuggestions();
+    showToast('Adicionada ao setlist!');
+  }
+
+  async function deleteSugg(id) {
+    if (!confirm('Descartar esta sugestão?')) return;
+    if (configured) {
+      const { error } = await sb.from('suggestions').delete().eq('id', id);
+      if (error) { showToast('Erro ao descartar.'); return; }
+    }
+    suggestions = suggestions.filter(x => x.id !== id);
+    if (!configured) saveLocal();
+    renderSuggestions();
+    showToast('Sugestão descartada.');
+  }
+
   /* ---------- TOAST ---------- */
   function showToast(msg) {
     const t = document.getElementById('toast');
@@ -794,14 +1003,18 @@
   }
 
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeModal();
-    if (e.key === 'Enter' && document.getElementById('modal').classList.contains('open')) confirmAdd();
+    if (e.key === 'Escape') { closeModal(); closeSuggModal(); }
+    if (e.key === 'Enter') {
+      if (document.getElementById('modal').classList.contains('open')) confirmAdd();
+      else if (document.getElementById('sugg-modal').classList.contains('open')) confirmSugg();
+    }
   });
 
   /* ---------- INIT ---------- */
   (async () => {
     await load();
     renderSongs();
+    renderSuggestions();
     applyRehearsal();
   })();
 </script>
