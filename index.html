@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TDHAs — Setlist</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0e0c0a;
+      --bg-card:   #161410;
+      --bg-input:  #1c1a17;
+      --border:    #2e2b26;
+      --border-hi: #4a4438;
+      --gold:      #c9963a;
+      --gold-dim:  #7a5920;
+      --gold-glow: rgba(201,150,58,0.12);
+      --text:      #e8e2d8;
+      --text-dim:  #8a8070;
+      --text-muted:#4a4438;
+      --spotify:   #1db954;
+      --spotify-bg:rgba(29,185,84,0.08);
+      --danger:    #b04a3a;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+      padding-bottom: 4rem;
+    }
+
+    .header {
+      text-align: center;
+      padding: 4rem 1.5rem 3rem;
+    }
+
+    .header::after {
+      content: '';
+      display: block;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, var(--gold-dim) 20%, var(--gold) 50%, var(--gold-dim) 80%, transparent 100%);
+      margin-top: 3rem;
+    }
+
+    .band-name {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(52px, 12vw, 96px);
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .band-subtitle {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-top: 12px;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* PRÓXIMO ENSAIO */
+    .rehearsal-block {
+      margin: 2.5rem 0 2rem;
+      border: 1px solid var(--gold-dim);
+      border-radius: 10px;
+      padding: 1.5rem;
+      background: var(--gold-glow);
+    }
+
+    .rehearsal-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .rehearsal-eyebrow::before {
+      content: '';
+      display: inline-block;
+      width: 18px;
+      height: 1px;
+      background: var(--gold);
+    }
+
+    .rehearsal-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr 2fr;
+      gap: 10px;
+    }
+
+    @media (max-width: 520px) {
+      .rehearsal-fields { grid-template-columns: 1fr 1fr; }
+      .field-local { grid-column: 1 / -1; }
+    }
+
+    .field-label {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 5px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .field-input {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-hi);
+      border-radius: 6px;
+      padding: 9px 12px;
+      font-size: 14px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color 0.15s;
+      color-scheme: dark;
+    }
+
+    .field-input:focus { border-color: var(--gold); }
+    .field-input::placeholder { color: var(--text-muted); }
+
+    .rehearsal-display {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text-dim);
+      min-height: 20px;
+    }
+
+    .rehearsal-display.filled { color: var(--text); font-weight: 500; }
+    .rehearsal-display .hl { color: var(--gold); }
+
+    .section-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    /* SONGS */
+    .songs-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 2rem;
+    }
+
+    .song-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.1rem 1.25rem;
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      align-items: center;
+      gap: 14px;
+      transition: border-color 0.15s;
+    }
+
+    .song-card:hover { border-color: var(--border-hi); }
+
+    .song-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: right;
+      user-select: none;
+    }
+
+    .song-info { min-width: 0; }
+
+    .song-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .song-artist {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    .song-genre {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .spotify-col {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .spotify-input {
+      width: 180px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 11px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .spotify-input:focus { border-color: var(--spotify); }
+    .spotify-input::placeholder { color: var(--text-muted); font-size: 10px; }
+
+    @media (max-width: 620px) {
+      .song-card { grid-template-columns: 24px 1fr; grid-template-rows: auto auto; }
+      .spotify-col { grid-column: 1 / -1; padding-left: 38px; }
+      .spotify-input { flex: 1; width: auto; }
+    }
+
+    .spotify-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 1px solid var(--border-hi);
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color 0.15s, background 0.15s;
+      padding: 0;
+    }
+
+    .spotify-btn:hover { background: var(--bg-input); }
+    .spotify-btn.linked { border-color: var(--spotify); background: var(--spotify-bg); }
+    .spotify-btn svg { width: 14px; height: 14px; display: block; }
+
+    .delete-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      padding: 0;
+    }
+
+    .delete-btn:hover { border-color: var(--danger); color: var(--danger); }
+    .delete-btn svg { width: 13px; height: 13px; }
+
+    /* ACTIONS */
+    .actions {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 18px;
+      border-radius: 7px;
+      border: 1px solid var(--border-hi);
+      background: transparent;
+      color: var(--text-dim);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+
+    .btn:hover { color: var(--text); border-color: var(--text-dim); }
+    .btn svg { width: 15px; height: 15px; }
+
+    .btn-gold {
+      border-color: var(--gold-dim);
+      color: var(--gold);
+    }
+
+    .btn-gold:hover {
+      border-color: var(--gold);
+      background: var(--gold-glow);
+      color: var(--gold);
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border-hi);
+      border-radius: 12px;
+      padding: 1.75rem;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .modal-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 1.25rem;
+    }
+
+    .modal-field { margin-bottom: 14px; }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 1.5rem;
+      justify-content: flex-end;
+    }
+
+    .btn-confirm {
+      background: var(--gold-glow);
+      border-color: var(--gold-dim);
+      color: var(--gold);
+    }
+
+    .btn-confirm:hover { background: rgba(201,150,58,0.18); border-color: var(--gold); }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: var(--bg-card);
+      border: 1px solid var(--border-hi);
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 13px;
+      color: var(--text-dim);
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 200;
+    }
+
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* STATUS PILL */
+    .status {
+      text-align: center;
+      margin: -1rem 0 1.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .status .dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .status.online .dot { background: var(--spotify); }
+    .status.online { color: var(--text-dim); }
+    .status.local .dot { background: var(--gold); }
+    .status.local { color: var(--gold-dim); }
+
+    /* DIVIDER */
+    .string-divider {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin: 2rem 0;
+    }
+
+    .string-divider::before {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-hi));
+    }
+
+    .string-divider .fret {
+      width: 2px;
+      height: 14px;
+      background: var(--border-hi);
+      margin: 0 10px;
+      flex-shrink: 0;
+    }
+
+    .string-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--border-hi), transparent);
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 2rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="band-name">TDHAs</div>
+  <div class="band-subtitle">Setlist &amp; Repertório</div>
+</div>
+
+<div class="container">
+
+  <div class="status" id="status"><span class="dot"></span><span id="status-text">Conectando…</span></div>
+
+  <div class="rehearsal-block">
+    <div class="rehearsal-eyebrow">Próximo ensaio</div>
+    <div class="rehearsal-fields">
+      <div>
+        <div class="field-label">Data</div>
+        <input type="date" class="field-input" id="rehearsal-date" oninput="updateRehearsal()" />
+      </div>
+      <div>
+        <div class="field-label">Horário</div>
+        <input type="time" class="field-input" id="rehearsal-time" oninput="updateRehearsal()" />
+      </div>
+      <div class="field-local">
+        <div class="field-label">Local</div>
+        <input type="text" class="field-input" id="rehearsal-local" placeholder="Ex: Estúdio do João…" oninput="updateRehearsal()" />
+      </div>
+    </div>
+    <div class="rehearsal-display" id="rehearsal-display">Nenhum ensaio marcado ainda.</div>
+  </div>
+
+  <div class="section-title">Setlist</div>
+  <div class="songs-list" id="songs-list"></div>
+
+  <div class="actions">
+    <button class="btn" onclick="openModal()">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="10" y1="4" x2="10" y2="16"/><line x1="4" y1="10" x2="16" y2="10"/></svg>
+      Adicionar música
+    </button>
+    <button class="btn btn-gold" onclick="saveData()">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h9l3 3v9a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z"/><rect x="7" y="13" width="6" height="4" rx="0.5"/><rect x="7" y="4" width="5" height="4" rx="0.5"/></svg>
+      Salvar
+    </button>
+  </div>
+
+  <div class="string-divider"><div class="fret"></div></div>
+  <div class="footer">TDHAs · Feito com 🎸</div>
+</div>
+
+<div class="modal-overlay" id="modal" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-title">Nova música</div>
+    <div class="modal-field">
+      <div class="field-label">Título</div>
+      <input type="text" class="field-input" id="new-title" placeholder="Nome da música" style="width:100%" />
+    </div>
+    <div class="modal-field">
+      <div class="field-label">Artista / Banda</div>
+      <input type="text" class="field-input" id="new-artist" placeholder="Nome da banda" style="width:100%" />
+    </div>
+    <div class="modal-field">
+      <div class="field-label">Gênero</div>
+      <input type="text" class="field-input" id="new-genre" placeholder="Ex: Hard Rock" style="width:100%" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-confirm" onclick="confirmAdd()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Supabase client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  /* ============================================================
+     CONFIGURAÇÃO — cole aqui os 2 valores do seu projeto Supabase
+     (Project Settings → API). Veja o README.md para o passo a passo.
+     ============================================================ */
+  const SUPABASE_URL      = 'https://YOUR_PROJECT.supabase.co';
+  const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY';
+
+  const LOCAL_KEY = 'tdhas_data';
+  const configured =
+    SUPABASE_URL.startsWith('https://') && !SUPABASE_URL.includes('YOUR_PROJECT') &&
+    SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.includes('YOUR_');
+
+  const sb = configured ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+  let songs = [];
+  let rehearsal = { date: '', time: '', local: '' };
+
+  /* ---------- STATUS ---------- */
+  function setStatus(mode) {
+    const el = document.getElementById('status');
+    const txt = document.getElementById('status-text');
+    if (mode === 'online') { el.className = 'status online'; txt.textContent = 'Sincronizado · todos veem o mesmo'; }
+    else if (mode === 'local') { el.className = 'status local'; txt.textContent = 'Modo local · configure o Supabase (README)'; }
+    else { el.className = 'status'; txt.textContent = 'Conectando…'; }
+  }
+
+  /* ---------- LOAD ---------- */
+  async function load() {
+    if (!configured) { loadLocal(); setStatus('local'); return; }
+    try {
+      const { data: s, error: se } = await sb.from('songs').select('*').order('position', { ascending: true }).order('id', { ascending: true });
+      if (se) throw se;
+      songs = s || [];
+      const { data: r } = await sb.from('rehearsal').select('data').eq('id', 1).maybeSingle();
+      if (r && r.data) rehearsal = { date: r.data.date || '', time: r.data.time || '', local: r.data.local || '' };
+      setStatus('online');
+    } catch (e) {
+      console.error(e);
+      showToast('Erro de conexão — usando dados locais.');
+      loadLocal(); setStatus('local');
+    }
+  }
+
+  function loadLocal() {
+    try {
+      const raw = localStorage.getItem(LOCAL_KEY);
+      if (!raw) { songs = seedSongs(); return; }
+      const data = JSON.parse(raw);
+      songs = data.songs || seedSongs();
+      if (data.rehearsal) rehearsal = data.rehearsal;
+    } catch (e) { songs = seedSongs(); }
+  }
+
+  function saveLocal() {
+    try { localStorage.setItem(LOCAL_KEY, JSON.stringify({ songs, rehearsal })); } catch (e) {}
+  }
+
+  function seedSongs() {
+    return [
+      { id: 1, position: 0, title: 'Man in the Box',            artist: 'Alice in Chains',     genre: 'Grunge',            spotify: '' },
+      { id: 2, position: 1, title: 'Plush',                     artist: 'Stone Temple Pilots', genre: 'Grunge',            spotify: '' },
+      { id: 3, position: 2, title: 'A Small Victory',           artist: 'Faith No More',       genre: 'Alternative Metal', spotify: '' },
+      { id: 4, position: 3, title: 'Perfect Strangers',         artist: 'Deep Purple',         genre: 'Hard Rock',         spotify: '' },
+      { id: 5, position: 4, title: 'Rock You Like a Hurricane', artist: 'Scorpions',           genre: 'Hard Rock',         spotify: '' },
+    ];
+  }
+
+  /* ---------- PERSIST (debounced) ---------- */
+  const songTimers = {};
+  function persistSong(id, patch) {
+    if (!configured) { saveLocal(); return; }
+    clearTimeout(songTimers[id]);
+    songTimers[id] = setTimeout(async () => {
+      const { error } = await sb.from('songs').update(patch).eq('id', id);
+      if (error) showToast('Erro ao salvar música.');
+    }, 600);
+  }
+
+  let rehTimer;
+  function persistRehearsal() {
+    if (!configured) { saveLocal(); return; }
+    clearTimeout(rehTimer);
+    rehTimer = setTimeout(async () => {
+      const { error } = await sb.from('rehearsal').update({ data: rehearsal }).eq('id', 1);
+      if (error) showToast('Erro ao salvar ensaio.');
+    }, 600);
+  }
+
+  /* ---------- SALVAR (botão) ---------- */
+  async function saveData() {
+    if (!configured) { saveLocal(); showToast('Salvo localmente!'); return; }
+    try {
+      await sb.from('rehearsal').update({ data: rehearsal }).eq('id', 1);
+      for (const s of songs) {
+        await sb.from('songs').update({
+          title: s.title, artist: s.artist, genre: s.genre, spotify: s.spotify, position: s.position
+        }).eq('id', s.id);
+      }
+      showToast('Salvo!');
+    } catch (e) { showToast('Erro ao salvar.'); }
+  }
+
+  /* ---------- HELPERS ---------- */
+  function isSpotify(v) { return v && (v.includes('spotify.com') || v.startsWith('spotify:')); }
+
+  function fmtDate(s) {
+    if (!s) return '';
+    const [y, m, d] = s.split('-');
+    return d + '/' + m + '/' + y;
+  }
+
+  function esc(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  /* ---------- REHEARSAL ---------- */
+  function updateRehearsal() {
+    rehearsal.date  = document.getElementById('rehearsal-date').value;
+    rehearsal.time  = document.getElementById('rehearsal-time').value;
+    rehearsal.local = document.getElementById('rehearsal-local').value;
+    renderRehearsal();
+    persistRehearsal();
+  }
+
+  function renderRehearsal() {
+    const el = document.getElementById('rehearsal-display');
+    const { date, time, local } = rehearsal;
+    if (!date && !time && !local) {
+      el.className = 'rehearsal-display';
+      el.innerHTML = 'Nenhum ensaio marcado ainda.';
+      return;
+    }
+    let parts = [];
+    if (date) parts.push('<span class="hl">' + fmtDate(date) + '</span>');
+    if (time) parts.push('<span class="hl">' + time + '</span>');
+    if (local) parts.push(esc(local));
+    el.className = 'rehearsal-display filled';
+    el.innerHTML = parts.join(' &mdash; ');
+  }
+
+  function applyRehearsal() {
+    document.getElementById('rehearsal-date').value  = rehearsal.date;
+    document.getElementById('rehearsal-time').value  = rehearsal.time;
+    document.getElementById('rehearsal-local').value = rehearsal.local;
+    renderRehearsal();
+  }
+
+  /* ---------- SPOTIFY ---------- */
+  function updateSpotify(id, val) {
+    const s = songs.find(x => x.id === id);
+    if (!s) return;
+    s.spotify = val;
+    const card = document.getElementById('card-' + id);
+    if (card) {
+      const linked = isSpotify(val);
+      const btn = card.querySelector('.spotify-btn');
+      btn.className = 'spotify-btn' + (linked ? ' linked' : '');
+      const circle = btn.querySelector('circle');
+      const paths  = btn.querySelectorAll('path');
+      if (circle) circle.setAttribute('fill', linked ? '#1db954' : 'var(--border-hi)');
+      paths.forEach(p => p.setAttribute('stroke', linked ? 'white' : 'var(--text-muted)'));
+    }
+    persistSong(id, { spotify: val });
+  }
+
+  function openSpotify(id) {
+    const s = songs.find(x => x.id === id);
+    if (s && isSpotify(s.spotify)) window.open(s.spotify, '_blank', 'noopener');
+    else showToast('Cole o link do Spotify primeiro.');
+  }
+
+  /* ---------- RENDER ---------- */
+  function renderSongs() {
+    const list = document.getElementById('songs-list');
+    list.innerHTML = '';
+    songs.forEach((s, i) => {
+      const linked = isSpotify(s.spotify);
+      const card = document.createElement('div');
+      card.className = 'song-card';
+      card.id = 'card-' + s.id;
+      card.innerHTML =
+        '<div class="song-num">' + String(i + 1).padStart(2, '0') + '</div>' +
+        '<div class="song-info">' +
+          '<div class="song-title">' + esc(s.title) + '</div>' +
+          '<div class="song-artist">' + esc(s.artist) + '</div>' +
+          '<div class="song-genre">' + esc(s.genre) + '</div>' +
+        '</div>' +
+        '<div class="spotify-col">' +
+          '<input class="spotify-input" type="text" placeholder="Link do Spotify…"' +
+            ' value="' + esc(s.spotify) + '"' +
+            ' oninput="updateSpotify(' + s.id + ', this.value)" />' +
+          '<button class="spotify-btn' + (linked ? ' linked' : '') + '"' +
+            ' title="' + (linked ? 'Abrir no Spotify' : 'Cole o link primeiro') + '"' +
+            ' onclick="openSpotify(' + s.id + ')">' +
+            '<svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+              '<circle cx="10" cy="10" r="9" fill="' + (linked ? '#1db954' : 'var(--border-hi)') + '"/>' +
+              '<path d="M14 8.2c-2.2-1.3-5.8-1.4-7.8-.5" stroke="' + (linked ? 'white' : 'var(--text-muted)') + '" stroke-width="1.3" stroke-linecap="round"/>' +
+              '<path d="M13.2 10.8c-1.8-1.1-5-1.1-6.8-.2" stroke="' + (linked ? 'white' : 'var(--text-muted)') + '" stroke-width="1.3" stroke-linecap="round"/>' +
+              '<path d="M12.5 13.2c-1.4-.8-4-.8-5.5 0" stroke="' + (linked ? 'white' : 'var(--text-muted)') + '" stroke-width="1.3" stroke-linecap="round"/>' +
+            '</svg>' +
+          '</button>' +
+          '<button class="delete-btn" title="Remover música" onclick="deleteSong(' + s.id + ')">' +
+            '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="5" y1="5" x2="15" y2="15"/><line x1="15" y1="5" x2="5" y2="15"/></svg>' +
+          '</button>' +
+        '</div>';
+      list.appendChild(card);
+    });
+  }
+
+  /* ---------- ADD / DELETE ---------- */
+  function openModal() {
+    ['new-title', 'new-artist', 'new-genre'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('modal').classList.add('open');
+    setTimeout(() => document.getElementById('new-title').focus(), 50);
+  }
+  function closeModal() { document.getElementById('modal').classList.remove('open'); }
+  function closeModalOutside(e) { if (e.target === document.getElementById('modal')) closeModal(); }
+
+  async function confirmAdd() {
+    const title  = document.getElementById('new-title').value.trim();
+    const artist = document.getElementById('new-artist').value.trim();
+    const genre  = document.getElementById('new-genre').value.trim();
+    if (!title || !artist) { showToast('Preencha título e artista.'); return; }
+
+    const position = songs.length ? Math.max(...songs.map(x => x.position || 0)) + 1 : 0;
+    const row = { title, artist, genre: genre || '—', spotify: '', position };
+
+    if (configured) {
+      const { data, error } = await sb.from('songs').insert(row).select().single();
+      if (error) { showToast('Erro ao adicionar.'); return; }
+      songs.push(data);
+    } else {
+      songs.push({ id: Date.now(), ...row });
+      saveLocal();
+    }
+    closeModal();
+    renderSongs();
+    showToast('Música adicionada!');
+  }
+
+  async function deleteSong(id) {
+    if (!confirm('Remover esta música do setlist?')) return;
+    if (configured) {
+      const { error } = await sb.from('songs').delete().eq('id', id);
+      if (error) { showToast('Erro ao remover.'); return; }
+    }
+    songs = songs.filter(x => x.id !== id);
+    if (!configured) saveLocal();
+    renderSongs();
+    showToast('Música removida.');
+  }
+
+  /* ---------- TOAST ---------- */
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._tid);
+    t._tid = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Enter' && document.getElementById('modal').classList.contains('open')) confirmAdd();
+  });
+
+  /* ---------- INIT ---------- */
+  (async () => {
+    await load();
+    renderSongs();
+    applyRehearsal();
+  })();
+</script>
+</body>
+</html>
